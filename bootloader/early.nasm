@@ -6,6 +6,7 @@ start:
     mov ds, ax
     mov es, ax
 
+                                ; setup stack
     cli                         ; disable interrupts (to be safe while seting stack segment and pointer)
     mov ss, ax
     mov sp, 0x7c00              ; stack starts at 0x7c00 and points downwards - see memory map (x86), we still have space there
@@ -13,6 +14,8 @@ start:
 
     jmp 0:skip                  ; use a far jump to set cs to zero
 skip:
+    call clearScreen
+
     mov ah, 0x13                ; write string
     mov al, 1                   ; mode: update cursor
     push ax
@@ -23,12 +26,26 @@ skip:
     mov bl, 0xa                 ; attribute: foregroung color - white
     mov bp, welcomeString       ; string location
     mov cx, [welcomeStringLength] ; length of the string
-    mov dh, 5                   ; y pos
-    mov dl, 2                   ; x pos
+    mov dh, 0                   ; y pos
+    mov dl, 0                   ; x pos
 
     int 0x10
 
+    cli
+hang:
     hlt
+    jmp hang
+
+clearScreen:
+    push ax
+
+    ; clear screen (by setting the video mode): http://www.ctyme.com/intr/rb-0069.htm
+    xor ax, ax                  ; ah=0
+    mov al, 0x03                ; al=0x03, 80x25
+    int 0x10
+
+    pop ax
+    ret
 
 welcomeString:
     db "Welcome from ziny bootloader!", 0
