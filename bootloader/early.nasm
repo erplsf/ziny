@@ -16,25 +16,70 @@ start:
 skip:
     call clearScreen
 
-    mov ah, 0x13                ; write string
-    mov al, 1                   ; mode: update cursor
-    push ax
-    xor ax, ax                  ; zero register
-    mov es, ax                  ; zero segment
-    pop ax
-    xor bh, bh                  ; video page number zero
-    mov bl, 0xa                 ; attribute: foregroung color - white
-    mov bp, welcomeString       ; string location
-    mov cx, [welcomeStringLength] ; length of the string
-    mov dh, 0                   ; y pos
-    mov dl, 0                   ; x pos
+    mov al, 'H'
+    call printChar
 
-    int 0x10
+    mov al, 'e'
+    call printChar
+
+    mov al, 'l'
+    call printChar
+
+    mov al, 'l'
+    call printChar
+
+    mov al, 'o'
+    call printChar
+
+    mov al, '!'
+    call printChar
+
+    ; mov ah, 0x13                ; write string
+    ; mov al, 1                   ; mode: update cursor
+    ; push ax
+    ; xor ax, ax                  ; zero register
+    ; mov es, ax                  ; zero segment
+    ; pop ax
+    ; xor bh, bh                  ; video page number zero
+    ; mov bl, 0xa                 ; attribute: foregroung color - white
+    ; mov bp, welcomeString       ; string location
+    ; mov cx, [welcomeStringLength] ; length of the string
+    ; mov dh, 0                   ; y pos
+    ; mov dl, 0                   ; x pos
+
+    ; int 0x10
 
     cli
 hang:
     hlt
     jmp hang
+
+printChar:
+    push cx
+
+    mov ah, 0x0a
+    mov cx, 0x01
+    int 0x10
+
+    call moveCursor
+
+    pop cx
+    ret
+
+moveCursor:
+    push dx
+
+    ; move cursor to the right
+    inc byte [curX]
+
+    mov dh, [curY]
+    mov dl, [curX]
+    mov ah, 0x02
+    int 0x10
+
+    pop dx
+    ret
+
 
 clearScreen:
     push ax
@@ -51,6 +96,11 @@ welcomeString:
     db "Welcome from ziny bootloader!", 0
 welcomeStringLength:
     dw $-welcomeString
+
+curX:
+    db 0
+curY:
+    db 0
 
 times 510 - ($-$$) db 0         ; zero out the rest of boot sector
 
