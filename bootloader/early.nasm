@@ -54,7 +54,6 @@ moveCursor:
 
     mov dx, [curP]              ; load current cursor position
 
-
     inc dl                      ; move cursor to the right
     cmp dl, 80                  ; check if within the the line HACK: hardcoded width
     jbe .end                    ; if yes, just move the cursor, if no, move to the next line
