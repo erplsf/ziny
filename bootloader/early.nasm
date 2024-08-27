@@ -12,47 +12,30 @@ start:
     mov sp, 0x7c00              ; stack starts at 0x7c00 and points downwards - see memory map (x86), we still have space there
     sti                         ; enable interrupts
 
-    jmp 0:skip                  ; use a far jump to set cs to zero
-skip:
+    jmp 0:.dummy                  ; use a far jump to set cs to zero
+.dummy:
     call clearScreen
 
-    mov al, 'H'
-    call printChar
+    mov si, welcomeString
+    call printString
 
-    mov al, 'e'
-    call printChar
-
-    mov al, 'l'
-    call printChar
-
-    mov al, 'l'
-    call printChar
-
-    mov al, 'o'
-    call printChar
-
-    mov al, '!'
-    call printChar
-
-    ; mov ah, 0x13                ; write string
-    ; mov al, 1                   ; mode: update cursor
-    ; push ax
-    ; xor ax, ax                  ; zero register
-    ; mov es, ax                  ; zero segment
-    ; pop ax
-    ; xor bh, bh                  ; video page number zero
-    ; mov bl, 0xa                 ; attribute: foregroung color - white
-    ; mov bp, welcomeString       ; string location
-    ; mov cx, [welcomeStringLength] ; length of the string
-    ; mov dh, 0                   ; y pos
-    ; mov dl, 0                   ; x pos
-
-    ; int 0x10
-
-    cli
+    cli                         ; hang computer
 hang:
     hlt
     jmp hang
+
+printString:
+    push ax
+.loop:
+    lodsb
+
+    cmp al, 0x0                 ; detect NULL byte, and exit
+    je .end
+    call printChar
+    jmp .loop
+.end:
+    pop ax
+    ret
 
 printChar:
     push cx
@@ -69,13 +52,26 @@ printChar:
 moveCursor:
     push dx
 
-    ; move cursor to the right
-    inc byte [curX]
+    mov dx, [curP]              ; load current cursor position
 
-    mov dh, [curY]
-    mov dl, [curX]
+
+    inc dl                      ; move cursor to the right
+    cmp dl, 80                  ; check if within the the line HACK: hardcoded width
+    jbe .end                    ; if yes, just move the cursor, if no, move to the next line
+    mov dl, 0                   ; reset x position
+    inc dh                      ; increase y position
+    cmp dh, 25                  ; check if we still have lines on screen HACK: hardcoded height
+    jbe .end                    ; if yes, just move the cursor, if no, move to the first line
+    mov dh, 0                   ; move to the first line
+
+.end:
     mov ah, 0x02
     int 0x10
+
+    push bx
+    mov bx, curP
+    mov [bx], dx
+    pop bx
 
     pop dx
     ret
@@ -94,9 +90,8 @@ clearScreen:
 
 welcomeString:
     db "Welcome from ziny bootloader!", 0
-welcomeStringLength:
-    dw $-welcomeString
 
+curP:
 curX:
     db 0
 curY:
