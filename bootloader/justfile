@@ -1,0 +1,7 @@
+default: build run
+
+build:
+    nasm -f bin early.nasm -o early.bin
+
+run:
+    qemu-system-i386 -drive format=raw,file=early.bin
